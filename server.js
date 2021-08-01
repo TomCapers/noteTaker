@@ -2,8 +2,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const util = require('util')
-const readFileAsync = util.promisify(fs.readFile);
-const writeFileAsync = util.promisify(fs.writeFile);
+
+
 
 
 
@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
 
-const notes = [];
+let notes = [];
 
 //html routes
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
@@ -25,23 +25,44 @@ app.get('/notes', (req, res) => res.sendFile(path.join(__dirname, 'public/notes.
 //API routes
 app.get('/api/notes', (req, res) => 
 
+fs.readFile('db/db.json', 'utf8', (error, data) =>
 
 
-readFileAsync('db/db.json', 'utf8').then(notes => {
-  console.log(notes);
-  return res.json([].concat(JSON.parse(notes)))
-}));
+      {
+        error ? console.log(error) : notes = JSON.parse(data);
+        return res.json(notes)
+      }
+
+
+));
 
 
 app.post('/api/notes', (req, res) => {
     const newNote = req.body;
   
     console.log(newNote);
-  
-    notes.push(newNote);
-    
-    writeFileAsync('db/db.json',notes, 'utf8');
-  });
+
+    fs.readFile('db/db.json', 'utf8', (error, data) =>
+      {
+        error ? console.log(error) : notes = JSON.parse(data);
+        notes.push(newNote);
+        fs.writeFile('db/db.json', JSON.stringify(notes), (err) =>
+          err? console.log(err) : res.json(notes)
+    )});
+     
+    });
+
+    app.delete('/api/notes/:id', (req, res) => {
+      const dnote = req.params.id
+
+      fs.readFile('db/db.json', 'utf8', (error, data) =>
+      {
+        error ? console.log(error) : notes = JSON.parse(data);
+        notes.splice(dnote,1);
+        fs.writeFile('db/db.json', JSON.stringify(notes), (err) =>
+          err? console.log(err) : res.json(notes)
+    )})
+    });
 
 
 
